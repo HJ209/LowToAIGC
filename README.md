@@ -35,6 +35,11 @@
 | 1 | 调采样参数(temperature/top_p/repetition_penalty) | `src/sampling_experiment.py` | CPU 可 | 治标，压高置信AI |
 | 2 | 真人语料 LoRA 微调小模型 | `src/finetune_lora.py` | 需 GPU | 治本，分布外 |
 | - | 本地困惑度代理打分（贯穿1/2，免烧朱雀额度） | `src/perplexity.py` | CPU 可 | 评测工具 |
+| ⭐ | **降AI 体检+改写辅助**（无GPU时的主力工具） | `src/humanize_assist.py` | CPU 可 | 定位高危段+给改写指令 |
+
+> **无 GPU / 无语料的推荐用法**：第2层微调需要 GPU，本地小模型自动出文质量不可用。
+> 所以实际主力是 `humanize_assist.py`：你用大模型出 AI 初稿 → 本工具逐段打分、揪出最像AI的段落、
+> 给出可粘贴的降AI改写指令 → 你（或大模型）重写这些段 → 复检。这是零 GPU 下唯一可靠高效的路径。
 
 ## 目录结构
 
@@ -42,7 +47,8 @@
 src/
   perplexity.py           # 用参考LM给文本打困惑度（AI味代理指标）
   sampling_experiment.py  # 第1层：采样参数 -> 困惑度对照实验
-  finetune_lora.py        # 第2层：真人语料 LoRA 微调脚手架（需GPU）
+  finetune_lora.py        # 第2层：真人语料 LoRA 微调（GPU正式训练/CPU烟雾测试）
+  humanize_assist.py      # 降AI体检+改写辅助：逐段PPL打分+高危清单+改写指令（零GPU）
 experiments/
   samples/                # 原版与各改写版样本（已附朱雀实测结果）
   results/                # 实验输出（困惑度对照表、生成样本）
@@ -54,6 +60,9 @@ reports/
 
 ```bash
 pip install -r requirements.txt
+
+# 【主力】降AI 体检：逐段打分 + 高危段清单 + 可粘贴改写指令
+python src/humanize_assist.py 你的章节.txt --top 10
 
 # 给已有文本打困惑度（越高越不像AI）
 python src/perplexity.py Qwen/Qwen2.5-0.5B experiments/samples/ch3_original.txt
@@ -68,9 +77,12 @@ python src/finetune_lora.py --allow_cpu --max_steps 20 --model Qwen/Qwen2.5-0.5B
   --data experiments/samples/human_corpus.sample.jsonl --batch_size 1 --grad_accum 4 --max_len 256
 ```
 
-## 工作流建议（务实预期）
+## 工作流建议（无 GPU 现实版，务实预期）
 
-1. 生成阶段：用微调后的小模型 + 调好的采样参数出初稿（压低困惑度指纹）。
-2. 用 `perplexity.py` 本地筛查，挑困惑度最高的几版。
-3. 关键段落（对话、心理活动）**真人补写**——这是唯一能把"人类创作"占比做上去的方法。
-4. 朱雀仅做最终抽检，别依赖它逐版刷。
+1. 用任意大模型（网页版 ChatGPT/DeepSeek/豆包等）出章节 AI 初稿。
+2. `python src/humanize_assist.py 章节.txt` → 拿到「高危段清单 + 每段可粘贴的降AI改写指令」。
+3. 把高危段的改写指令逐个粘给大模型重写（或自己手写，效果最稳）。
+4. 改完回头 `humanize_assist.py` / `perplexity.py` 复检，看全文 PPL 是否抬升。
+5. 最后用朱雀抽检 1 次定稿。关键段落（对话、心理活动）**真人补写**是唯一能把"人类创作"占比做上去的方法。
+
+> 有 GPU + 真人语料后，再上第2层 LoRA 微调，从源头出更难被识别的稿。
