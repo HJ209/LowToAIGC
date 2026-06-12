@@ -53,9 +53,17 @@
   必须靠"更强基座(GPU/API) + 真人语料微调(第2层)"或真人逐段改写。
 - 工程坑：fp32 同时载 1.5B+0.5B 会 OOM（8G机），改为先生成、释放后再载0.5B打分；bf16 在CPU上生成极慢，弃用。
 
-## 实验2：LoRA 微调（第2层，治本）— 待 GPU
+## 实验2：LoRA 微调（第2层，治本）
 
-- 脚手架 `src/finetune_lora.py` 已就绪（peft + transformers Trainer）。
-- 本机无 GPU（2核CPU/8G内存），无法实跑；需 GPU 机器/Colab/云。
-- 还需准备真人网文语料 `experiments/corpus/human_novels.jsonl`（每行 `{"text": ...}`）。
-- 预期收益最大：把小模型输出分布拉向真人，且对朱雀是"分布外"样本，更难识别。
+`src/finetune_lora.py` 已支持 GPU 正式训练 + CPU 烟雾测试两种模式。
+
+**CPU 烟雾测试（本机实跑，已通）：**
+- 命令：`python src/finetune_lora.py --allow_cpu --max_steps 20 --model Qwen/Qwen2.5-0.5B --data experiments/samples/human_corpus.sample.jsonl --batch_size 1 --grad_accum 4 --max_len 256`
+- 结果：成功"加载0.5B→挂LoRA(可训练参数 2.16M / 0.44%)→训练20步→保存adapter→base vs LoRA 生成+PPL对比"。**整条链路跑通、可迁移到 GPU。**
+- 方向性信号：同一 prompt 下 base 生成 PPL=28.49，LoRA 生成 PPL=51.65（微调后更不可预测，方向符合预期）。
+- **但这不是真实收益**：0.5B + 仅20步 + 12条占位语料，两边输出都是乱码；PPL 升高也可能只是"更不连贯"。绝对数字无意义，仅证明管线可用。
+
+**正式跑的前提（仍需用户提供）：**
+- GPU（>=12GB 显存跑 0.5B~1.5B 较轻松）。
+- 足量**真人**网文语料 `experiments/corpus/human_novels.jsonl`（每行 `{"text": ...}`，建议数千段，最好是用户自己写的章节）。当前 `experiments/samples/human_corpus.sample.jsonl` 仅为占位示例。
+- 预期收益：把小模型输出分布拉向真人，且对朱雀是"分布外"样本，更难识别。正式跑完需用朱雀实测坐实。

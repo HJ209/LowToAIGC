@@ -61,8 +61,11 @@ python src/perplexity.py Qwen/Qwen2.5-0.5B experiments/samples/ch3_original.txt
 # 第1层：扫采样参数，产出 参数->困惑度 对照表
 python src/sampling_experiment.py
 
-# 第2层：真人语料 LoRA 微调（需 GPU + 准备 jsonl 语料）
+# 第2层：真人语料 LoRA 微调（GPU 正式训练，需准备 jsonl 语料）
 python src/finetune_lora.py --model Qwen/Qwen2.5-1.5B --data experiments/corpus/human_novels.jsonl
+# 第2层：CPU 烟雾测试（无 GPU 也能跑通链路，验证用，不产生真实收益）
+python src/finetune_lora.py --allow_cpu --max_steps 20 --model Qwen/Qwen2.5-0.5B \
+  --data experiments/samples/human_corpus.sample.jsonl --batch_size 1 --grad_accum 4 --max_len 256
 ```
 
 ## 工作流建议（务实预期）
