@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.venv/
+experiments/results/lora_human/
+experiments/corpus/
+experiments/results/*.log
