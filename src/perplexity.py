@@ -34,11 +34,12 @@ class PerplexityScorer:
     保证横向比较有意义（绝对值不重要，相对高低才重要）。
     """
 
-    def __init__(self, model_name: str = "Qwen/Qwen2.5-0.5B", device: str = "cpu"):
+    def __init__(self, model_name: str = "Qwen/Qwen2.5-0.5B", device: str = "cpu",
+                 dtype: torch.dtype = torch.float32):
         self.device = device
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForCausalLM.from_pretrained(
-            model_name, torch_dtype=torch.float32
+            model_name, dtype=dtype
         ).to(device)
         self.model.eval()
 
