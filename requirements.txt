@@ -1,0 +1,9 @@
+# 推理 / 困惑度打分 / 采样实验（CPU 即可）
+torch>=2.2
+transformers>=4.44
+accelerate>=0.33
+huggingface_hub>=0.24
+
+# LoRA 微调（需要 GPU）
+peft>=0.12
+datasets>=2.20
